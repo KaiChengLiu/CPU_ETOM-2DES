@@ -18,8 +18,8 @@ TLIST="0"
 # Loop through all combinations of TAU and T
 for TAU in $(seq -600 10 600); do
     for T in $TLIST; do
-        INPUT_FILE="/home/andrew91411/CPU_2DES/2d_input/key_${TAU}_${T}_100pulse.key"
-        OUTPUT_FILE="/home/andrew91411/CPU_2DES/2d_output/out_${TAU}_${T}_debye_100pulse.out"
+        INPUT_FILE="../2d_input/key_${TAU}_${T}.key"
+        OUTPUT_FILE="../2d_output/out_${TAU}_${T}.out"
 
         # Check if the input file exists
         if [ ! -f "$INPUT_FILE" ]; then
