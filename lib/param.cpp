@@ -31,19 +31,9 @@ param::param(string filename) {
 			int total_size = this->sys_size * this->sys_size;
 			getline(f, line);
 			istringstream val(line);
-			val >> this->K >> this->K_m >> this->L >> this->cutoff_level;
-
-			//string s;
-			//Build_ADO(this->ado, s, this->K * this->K_m, this->L, 0);
-			//this->ado_map = Build_ADO_map(this->ado);
-			/*
-			for (int i = 0; i < this->ado.size(); i++) {
-				gsl_matrix_complex* m = gsl_matrix_complex_alloc(this->sys_size, this->sys_size);
-				gsl_matrix_complex_set_all(m, gsl_complex_rect(0.0, 0.0));
-				this->rho.push_back(m);
-			}
-			gsl_matrix_complex_set(this->rho[0], 0, 0, gsl_complex_rect(1.0, 0.0));
-			*/
+			val >> this->K >> this->L;
+			this->K_m = 0;
+			this->cutoff_level = 0;
 		}
 
 		else if (key_word == "SIZE") {
