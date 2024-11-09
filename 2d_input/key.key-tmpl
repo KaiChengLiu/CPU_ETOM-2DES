@@ -28,12 +28,8 @@ DISORDER
 0.0	0.0	0.0	0.0	0.0	0.0	42.4	0.0
 0.0	0.0	0.0	0.0	0.0	0.0	0.0	42.4
 
-# K
-TEMPERATURE
-77
-
 BATHTYPE
-artificial
+etom
 
 # |m><n| lambda(cm^-1) gamma(cm^-1)
 BATH
