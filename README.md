@@ -17,4 +17,13 @@ photon-echo peakshift measurements.
 For how to setup and process the jobs, see INSTALL file.
 
 Module:
+
   CPU_2DES: Calculates 2DES for multilevel excitonic system including Monte-Carlo Gaussian static disorders. 
+
+Usage:
+
+  1. Follow the INSTALL file to set up the environment
+  2. Set up input file, you can follow the step in /2d_intput/README.md
+  3. Set up ETOM by /bath_model/ETOM.py
+  4. Run /script/Run_CPU_2DES.sh
+  5. Draw 2D spectrum by gen_2d_spectrum/gen_2d_spectrum.py 
