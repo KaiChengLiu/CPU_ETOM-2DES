@@ -78,7 +78,7 @@ popt_imag, pcov_imag = curve_fit(fit_function_imag, t_values, y_values_imag, p0=
 
 import re
 # Read the content of the key.txt file
-key_file_path = "../2d input/key.txt"
+key_file_path = "../2d_input/key.key-tmpl"
 
 with open(key_file_path, 'r') as file:
     lines = file.readlines()
