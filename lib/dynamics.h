@@ -18,9 +18,9 @@ void total_ADO_dynamics(const param& key, const std::vector<gsl_matrix_complex*>
 
 void total_ADO_dynamics_Ht(param& key, const std::vector<gsl_matrix_complex*>& rho_copy, std::vector<gsl_matrix_complex*>& drho, const gsl_matrix_complex* Ht);
 
-void HEOM_Solver(param& key, std::vector<int>& sites);
+void dynamics_solver(param& key, gsl_matrix_complex* H, vector<int>& sites, vector<vector<double>>& population);
 
-void propagation_Ht(param& key, gsl_matrix_complex* H, const int nv1, const int nv2, const int nv3, vector<gsl_complex>& polarization);
+void twoD_spectrum_solver(param& key, gsl_matrix_complex* H, const int nv1, const int nv2, const int nv3, vector<gsl_complex>& polarization);
 
 void construct_Hal(param& key, gsl_matrix_complex* Hal, gsl_rng* r);
 

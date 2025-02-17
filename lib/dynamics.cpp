@@ -45,49 +45,68 @@ void construct_Hal(param& key, gsl_matrix_complex* Hal, gsl_rng* r) {
 	//print_Hal(Hal);
 }
 
-void total_ADO_dynamics(const param& key, const vector<gsl_matrix_complex*>& rho_copy, vector<gsl_matrix_complex*>& drho) {
-	/*
+void total_ADO_dynamics(const param& key, const vector<gsl_matrix_complex*>& rho_copy, vector<gsl_matrix_complex*>& drho, const gsl_matrix_complex* H) {
+	
 	int sys_size = key.sys_size;
 	int total_size = sys_size * sys_size;
+	int K = key.K;
+	int K_m = key.K_m;
+
 	for (int i = 0; i < key.ado.size(); i++) {
 		//L_s
-		gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, ICNT, rho_copy[i], key.Hal, ONE, drho[i]);
+		gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, ICNT, rho_copy[i], H, ZERO, drho[i]);
+		gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, MINUS_ICNT, H, rho_copy[i], ONE, drho[i]);
 
-		gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, MINUS_ICNT, key.Hal, rho_copy[i], ONE, drho[i]);
-
-		//Damp
-		for (int j = 0; j < key.K; j++) {
-			if ((int)key.ado[i][j] == 0) continue;
-			gsl_complex x = gsl_complex_rect(-1 * (int)key.ado[i][j] * GSL_REAL(key.gamma[j]), 0.0);
+		if (i != 0) {
+			gsl_complex x = gsl_complex_rect(0.0, 0.0);
+			for (int j = 0; j < K; j++) {
+				for (int k = 0; k < K_m; k++) {
+					int offset = j + k * K;
+					if ((int)key.ado[i][offset] == 0) continue;
+					gsl_complex y = gsl_complex_mul(MINUS_ONE, gsl_complex_mul_real(key.gamma[j][k], (int)key.ado[i][offset]));
+					x = gsl_complex_add(x, y);
+				}
+			}
 			cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(rho_copy[i], 0, 0), 1, gsl_matrix_complex_ptr(drho[i], 0, 0), 1);
 		}
 
-		//Upper
-
-		for (int j = 0; j < key.K; j++) {
-			if ((int)key.ado[i][j] >= key.L) continue;
-			string tmp(key.ado[i]);
-			tmp[j] += 1;
-			if (key.ado_map.find(tmp) != key.ado_map.end()) {
-				gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, MINUS_ICNT, rho_copy[key.ado_map.at(tmp)], key.S[j], ONE, drho[i]);
-				gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, ICNT, key.S[j], rho_copy[key.ado_map.at(tmp)], ONE, drho[i]);
+		for (int j = 0; j < K; j++) {
+			for (int k = 0; k < K_m; k++) {
+				int offset = j + k * K;
+				if ((int)key.ado[i][offset] >= key.L) continue;
+				string tmp(key.ado[i]);
+				tmp[offset] += 1;
+				if (key.ado_map.find(tmp) != key.ado_map.end()) {
+					double x = sqrt(((double)key.ado[i][offset] + 1) * gsl_complex_abs(key.alpha[j][k]));
+					//double x = 1.0;
+					gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, gsl_complex_mul_real(MINUS_ICNT, x), rho_copy[key.ado_map.at(tmp)], key.S[j], ONE, drho[i]);
+					gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, gsl_complex_mul_real(ICNT, x), key.S[j], rho_copy[key.ado_map.at(tmp)], ONE, drho[i]);
+				}
 			}
 		}
-		//Lower
 
-		for (int j = 0; j < key.K; j++) {
-			if ((int)key.ado[i][j] == 0 || key.ado[i][j] - 1 < 0) continue;
-			string tmp(key.ado[i]);
-			tmp[j] -= 1;
-			if (key.ado_map.find(tmp) != key.ado_map.end()) {
-				gsl_complex x = gsl_complex_mul_real(gsl_complex_mul(ONE, key.alpha[j]), (int)key.ado[i][j]);
-				gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, x, key.S[j], rho_copy[key.ado_map.at(tmp)], ONE, drho[i]);
-				x = gsl_complex_mul_real(gsl_complex_mul(ONE, key.alpha_t[j]), (int)key.ado[i][j]);
-				gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, x, rho_copy[key.ado_map.at(tmp)], key.S[j], ONE, drho[i]);
+		//Lower
+		if (i != 0) {
+			for (int j = 0; j < K; j++) {
+				for (int k = 0; k < K_m; k++) {
+					int offset = j + k * K;
+					if ((int)key.ado[i][offset] <= 0) continue;
+					string tmp(key.ado[i]);
+					tmp[offset] -= 1;
+					gsl_complex x = gsl_complex_rect(0.0, 0.0);
+					if (key.ado_map.find(tmp) != key.ado_map.end()) {
+						double y = sqrt((double)key.ado[i][offset] / gsl_complex_abs(key.alpha[j][k]));
+						//double y = (double)key.ado[i][offset];
+						x = gsl_complex_mul(ICNT, gsl_complex_mul_real(key.alpha[j][k], y));
+						gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, x, key.S[j], rho_copy[key.ado_map.at(tmp)], ONE, drho[i]);
+						x = gsl_complex_mul(MINUS_ICNT, gsl_complex_mul_real(key.alpha_t[j][k], y));
+						gsl_blas_zgemm(CblasNoTrans, CblasNoTrans, x, rho_copy[key.ado_map.at(tmp)], key.S[j], ONE, drho[i]);
+
+					}
+				}
 			}
 		}
 	}
-	*/
 }
 
 void total_ADO_dynamics_Ht(param& key, const vector<gsl_matrix_complex*>& rho_copy, vector<gsl_matrix_complex*>& drho, const gsl_matrix_complex* Ht) {
@@ -175,7 +194,8 @@ void total_ADO_dynamics_Ht(param& key, const vector<gsl_matrix_complex*>& rho_co
 	gsl_matrix_complex_free(tmp);
 }
 
-void HEOM_Solver(param& key, vector<int>& sites) {
+void dynamics_solver(param& key, gsl_matrix_complex* H, vector<int>& sites, vector<vector<double>>& population) {
+	key.reset_rho();
 	int sys_size = key.sys_size;
 	int total_size = sys_size * sys_size;
 	if (sites.size() > sys_size) {
@@ -189,69 +209,68 @@ void HEOM_Solver(param& key, vector<int>& sites) {
 		}
 	}
 
-	vector<ofstream> files;
-	vector<string> file_name(sites.size());
-	for (int i = 0; i < sites.size(); i++) file_name[i] = "site " + to_string(sites[i]) + " population.txt";
-	for (const auto& name : file_name) files.emplace_back(name);
-
 	vector<double> b = { 1.0 / 6, 2.0 / 6, 2.0 / 6, 1.0 / 6 };
 
-	vector<gsl_matrix_complex*> rho_copy(total_size * key.ado.size());
-	for (gsl_matrix_complex* m : rho_copy) {
-		m = gsl_matrix_complex_alloc(sys_size, sys_size);
-		gsl_matrix_complex_set_all(m, gsl_complex_rect(0.0, 0.0));
+	vector<gsl_matrix_complex*> k1(key.ado.size());
+	for (int i = 0; i < key.ado.size(); i++) {
+		k1[i] = gsl_matrix_complex_alloc(sys_size, sys_size);
+		gsl_matrix_complex_set_all(k1[i], gsl_complex_rect(0.0, 0.0));
 	}
-	vector<gsl_matrix_complex*> k1(total_size * key.ado.size());
-	for (gsl_matrix_complex* m : k1) {
-		m = gsl_matrix_complex_alloc(sys_size, sys_size);
-		gsl_matrix_complex_set_all(m, gsl_complex_rect(0.0, 0.0));
+	vector<gsl_matrix_complex*> k2(key.ado.size());
+	for (int i = 0; i < key.ado.size(); i++) {
+		k2[i] = gsl_matrix_complex_alloc(sys_size, sys_size);
+		gsl_matrix_complex_set_all(k2[i], gsl_complex_rect(0.0, 0.0));
 	}
-	vector<gsl_matrix_complex*> k2(total_size * key.ado.size());
-	for (gsl_matrix_complex* m : k2) {
-		m = gsl_matrix_complex_alloc(sys_size, sys_size);
-		gsl_matrix_complex_set_all(m, gsl_complex_rect(0.0, 0.0));
+	vector<gsl_matrix_complex*> k3(key.ado.size());
+	for (int i = 0; i < key.ado.size(); i++) {
+		k3[i] = gsl_matrix_complex_alloc(sys_size, sys_size);
+		gsl_matrix_complex_set_all(k3[i], gsl_complex_rect(0.0, 0.0));
 	}
-	vector<gsl_matrix_complex*> k3(total_size * key.ado.size());
-	for (gsl_matrix_complex* m : k3) {
-		m = gsl_matrix_complex_alloc(sys_size, sys_size);
-		gsl_matrix_complex_set_all(m, gsl_complex_rect(0.0, 0.0));
-	}
-	vector<gsl_matrix_complex*> k4(total_size * key.ado.size());
-	for (gsl_matrix_complex* m : k4) {
-		m = gsl_matrix_complex_alloc(sys_size, sys_size);
-		gsl_matrix_complex_set_all(m, gsl_complex_rect(0.0, 0.0));
+	vector<gsl_matrix_complex*> k4(key.ado.size());
+	for (int i = 0; i < key.ado.size(); i++) {
+		k4[i] = gsl_matrix_complex_alloc(sys_size, sys_size);
+		gsl_matrix_complex_set_all(k4[i], gsl_complex_rect(0.0, 0.0));
 	}
 
-	for (float t = 0; t <= key.t_end; t += key.step_size) {
-		for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
-		for (int j = 0; j < sites.size(); j++) {
-			gsl_complex r = gsl_matrix_complex_get(key.rho[0], sites[j] - 1, sites[j] - 1);
-			files[j] << GSL_REAL(r) << " " << GSL_IMAG(r) << '\n';
+	float nstep = (key.t_end - key.t_start) / key.step_size;
+	float t = key.t_start;
+	int print_step = (int)(key.print_step / key.step_size);
+	int ct = 0;
+
+	for (int i = 0; i <= nstep; i++) {
+		if (i % print_step == 0) {
+			for (int j = 0; j < sites.size(); j++) {
+				gsl_complex r = gsl_matrix_complex_get(key.rho[0], sites[j] - 1, sites[j] - 1);
+				//files[j] << GSL_REAL(r) << " " << GSL_IMAG(r) << '\n';
+				population[j][ct] += GSL_REAL(r) / key.n_sample;
+			}
+			ct++;
 		}
-
-		//printf("%f\n", r.x);
-		//cudaMemcpy(rho_copy, d_rho, total_size * ado.size() * sizeof(data_type), cudaMemcpyDeviceToDevice);
 		//f = drho/dt = f(rho)
 		//k1 = f(rho)
-		total_ADO_dynamics(key, rho_copy, k1);
+		gsl_complex x;
+		total_ADO_dynamics(key, key.rho, k1, H);
 
-		//k2 = f(rho + b[1][0]*h*k1)
-		gsl_complex x = gsl_complex_rect(key.step_size * 0.5, 0.0);
-		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k1[j], 0, 0), 1, gsl_matrix_complex_ptr(rho_copy[j], 0, 0), 1);
-		total_ADO_dynamics(key, rho_copy, k2);
-		for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
+		x = gsl_complex_rect(key.step_size * 0.5, 0.0);
+		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k1[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
+		total_ADO_dynamics(key, key.rho, k2, H);
+		//for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
+		x = gsl_complex_mul_real(x, -1);
+		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k1[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
 
-		//k3 = f(rho + b[2][0]*h*k1 + b[2][1]*h*k2)
-		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k2[j], 0, 0), 1, gsl_matrix_complex_ptr(rho_copy[j], 0, 0), 1);
-		total_ADO_dynamics(key, rho_copy, k3);
-		for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
+		x = gsl_complex_rect(key.step_size * 0.5, 0.0);
+		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k2[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
+		total_ADO_dynamics(key, key.rho, k3, H);
+		//for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
+		x = gsl_complex_mul_real(x, -1);
+		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k2[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
 
-		//k4 = f(rho + b[3][0]*h*k1 + b[3][1]*h*k2+ b[3][2]*h*k3)
 		x = gsl_complex_rect(key.step_size, 0.0);
-		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k3[j], 0, 0), 1, gsl_matrix_complex_ptr(rho_copy[j], 0, 0), 1);
-		total_ADO_dynamics(key, rho_copy, k4);
-		for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
-
+		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k3[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
+		total_ADO_dynamics(key, key.rho, k4, H);
+		//for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_memcpy(rho_copy[j], key.rho[j]);
+		x = gsl_complex_mul_real(x, -1);
+		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k3[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
 
 		//new rho
 		x = gsl_complex_rect(key.step_size * b[0], 0.0);
@@ -262,16 +281,16 @@ void HEOM_Solver(param& key, vector<int>& sites) {
 		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k3[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
 		x = gsl_complex_rect(key.step_size * b[3], 0.0);
 		for (int j = 0; j < key.ado.size(); j++) cblas_zaxpy(total_size, &x, gsl_matrix_complex_ptr(k4[j], 0, 0), 1, gsl_matrix_complex_ptr(key.rho[j], 0, 0), 1);
+		t += key.step_size;
 	}
-	for (int i = 0; i < files.size(); i++) files[i].close();
-	for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_free(rho_copy[j]);
 	for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_free(k1[j]);
 	for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_free(k2[j]);
 	for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_free(k3[j]);
 	for (int j = 0; j < key.ado.size(); j++) gsl_matrix_complex_free(k4[j]);
 }
 
-void propagation_Ht(param& key, gsl_matrix_complex* H, const int nv1, const int nv2, const int nv3, vector<gsl_complex>& polarization) {
+
+void twoD_solver(param& key, gsl_matrix_complex* H, const int nv1, const int nv2, const int nv3, vector<gsl_complex>& polarization) {
 	int sys_size = key.sys_size;
 	int total_size = sys_size * sys_size;
 	key.reset_rho();
