@@ -11,25 +11,6 @@
 
 using namespace std;
 
-double calculateMean(const vector<double>& data) {
-	double sum = 0.0;
-	for (double num : data) {
-		sum += num;
-	}
-	return sum / data.size();
-}
-
-double calculateStandardDeviation(const vector<double>& data) {
-	double mean = calculateMean(data);
-	double variance = 0.0;
-
-	for (double num : data) {
-		variance += pow(num - mean, 2);
-	}
-	variance /= data.size();
-	return sqrt(variance);
-}
-
 int main(int argc, char** argv)
 {
 	string filename(argv[1]);
