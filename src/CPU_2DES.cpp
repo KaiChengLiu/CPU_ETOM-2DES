@@ -14,15 +14,11 @@ using namespace std;
 int main(int argc, char** argv)
 {
 	string filename(argv[1]);
-	//cout << "Now is CPU version" << '\n';
-	//cout << "Running " << filename << '\n';
 	param k;
 	k.param_2des(filename);
-	//cout << "The bath type is " << k.bath_type << '\n';
+
 
 	construct_ADO_set(k);
-
-  
   
 	const gsl_rng_type* T;
 	gsl_rng* r;
