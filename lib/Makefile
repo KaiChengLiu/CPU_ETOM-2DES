@@ -6,10 +6,10 @@ CXXFLAGS = -Wall -Wno-sign-compare -Wno-endif-labels -Wno-unused-variable -O3 -s
 INCLUDES = -I/usr/include
 
 # Source files
-SRCS = constant.cpp dynamics.cpp debye_bath.cpp ohmic_bath.cpp polar.cpp TD_hamiltonian.cpp param.cpp super_ohmic_bath.cpp utilize.cpp
+SRCS = constant.cpp dynamics.cpp polar.cpp TD_hamiltonian.cpp param.cpp utilize.cpp
 
 # Header files
-HDRS = constant.h dynamics.h debye_bath.h ohmic_bath.h polar.h TD_hamiltonian.h param.h super_ohmic_bath.h utilize.h
+HDRS = constant.h dynamics.h polar.h TD_hamiltonian.h param.h utilize.h
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)

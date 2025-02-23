@@ -2,9 +2,6 @@
 #define PARAM_H
 
 #include "constant.h"
-#include "ohmic_bath.h"
-#include "super_ohmic_bath.h"
-#include "debye_bath.h"
 
 #include <iostream>
 #include <string>
