@@ -2,7 +2,7 @@
 
 # Set the path to the CPU_2DES program
 CPU_2DES="/home/andrew91411/CPU_2DES/src/CPU_2DES"
-PBS_DIR="/home/andrew91411/CPU_2DES/scripts"  # 存放 PBS 腳本的目錄
+PBS_DIR="/home/andrew91411/CPU_2DES/meta_script"  
 OUTPUT_DIR="/home/andrew91411/CPU_2DES/2d_output"
 INPUT_DIR="/home/andrew91411/CPU_2DES/2d_input"
 TLIST="0"
