@@ -1,18 +1,18 @@
 #!/bin/bash
 
-# 設定初始變數
+# Initialize variables
 t0=210
 propagate_time=600
 
 tau_step=10
 tau_bound=600
 input_file="key.key-tmpl"
-T=(0)  # 使用 bash 陣列來存儲 T 的值
+T=(0)  # Use a bash array to store T values
 
-# 一次性讀取文件內容到變數中
+# Read the file content into a variable once
 input_content=$(cat "$input_file")
 
-# 使用 awk 進行文本處理和替換
+# Function to process and replace text using awk
 process_file() {
     local tau1=$1
     local tau2=$2
@@ -22,7 +22,7 @@ process_file() {
 
     echo "Processing file: $of_name with tau1=$tau1, tau2=$tau2, tau3=$tau3, t_end=$t_end"
 
-    # 用 awk 進行替換
+    # Use awk for text replacement
     echo "$input_content" | awk -v tau1="$tau1" -v tau2="$tau2" -v tau3="$tau3" -v t_end="$t_end" '
     {
         gsub(/TAU1/, tau1);
@@ -33,7 +33,7 @@ process_file() {
     }' > "$of_name"
 }
 
-# 第一個迴圈：i 從 0 到 tau_bound
+# First loop: i from 0 to tau_bound
 for t in "${T[@]}"; do
     for ((i=0; i<=tau_bound; i+=tau_step)); do
         tau1=$t0
@@ -46,10 +46,10 @@ for t in "${T[@]}"; do
     done
 done
 
-# 第二個迴圈：i 從 -tau_bound 到 0
+# Second loop: i from -tau_bound to 0
 for t in "${T[@]}"; do
     for ((i=-tau_bound; i<0; i+=tau_step)); do
-        abs_i=$(echo "${i#-}")  # 取得 i 的絕對值
+        abs_i=$(echo "${i#-}")  # Get the absolute value of i
         tau1=$(echo "$t0 + $abs_i" | bc)
         tau2=$t0
         tau3=$(echo "$t0 + $abs_i + $t" | bc)
@@ -60,5 +60,5 @@ for t in "${T[@]}"; do
     done
 done
 
-# 等待所有背景進程完成
+# Wait for all background processes to complete
 wait
