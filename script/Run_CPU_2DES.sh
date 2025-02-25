@@ -7,7 +7,7 @@
 #PBS -l walltime=720:00:00,nodes=1:ppn=11
 
 # Set the path to the CPU_2DES program
-CPU_2DES=/home/andrew91411/CPU_2DES/src/CPU_2DES
+CPU_2DES=/home/andrew91411/CPU_ETOM-2DES/src/CPU_2DES
 
 # Change to the directory where the job was submitted
 cd $PBS_O_WORKDIR
