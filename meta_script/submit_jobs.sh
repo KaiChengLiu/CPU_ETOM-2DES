@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Set the path to the CPU_2DES program
-CPU_2DES="/home/andrew91411/CPU_ETOM-2DES/src/CPU_2DES"
-PBS_DIR="/home/andrew91411/CPU_ETOM-2DES/meta_script"  
-OUTPUT_DIR="/home/andrew91411/CPU_ETOM-2DES/2d_output"
-INPUT_DIR="/home/andrew91411/CPU_ETOM-2DES/2d_input"
+CPU_2DES="../src/CPU_2DES"
+PBS_DIR="../meta_script"  
+OUTPUT_DIR="../2d_output"
+INPUT_DIR="../2d_input"
 TLIST="0"
 FLIST="100"
 START_TAU=-600
