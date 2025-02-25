@@ -1,6 +1,5 @@
 #include "param.h"
 
-
 double delta1(int a, int b) {
 	return a == b ? 1 : 0;
 }
@@ -375,14 +374,14 @@ void param::reset_rho() {
 void param::param_free() {
 	size_t ado_size = this->ado.size();
 	int K = this->K;
-	for (int i = 0; i < ado_size; i++) gsl_matrix_complex_free(this->rho[i]);
-	for (int i = 0; i < K; i++) gsl_matrix_complex_free(this->S[i]);
-	for (int i = 0; i < 4; i++) gsl_matrix_complex_free(this->X[i]);
-	gsl_matrix_complex_free(this->Hal);
-	gsl_matrix_complex_free(this->X_site);
-	gsl_matrix_complex_free(this->X_x);
-	gsl_matrix_complex_free(this->X_y);
-	gsl_matrix_complex_free(this->X_z);
-	gsl_matrix_complex_free(this->polar);
-	gsl_matrix_complex_free(this->Disorder);
+	for (int i = 0; i < ado_size; i++) if(this->rho[i]) gsl_matrix_complex_free(this->rho[i]);
+	for (int i = 0; i < K; i++) if(this->S[i]) gsl_matrix_complex_free(this->S[i]);
+	if(!this->X.empty()) for (int i = 0; i < 4; i++) gsl_matrix_complex_free(this->X[i]);
+	if(this->Hal) gsl_matrix_complex_free(this->Hal);
+	if(this->X_site) gsl_matrix_complex_free(this->X_site);
+	if(this->X_x) gsl_matrix_complex_free(this->X_x);
+	if(this->X_y) gsl_matrix_complex_free(this->X_y);
+	if(this->X_z) gsl_matrix_complex_free(this->X_z);
+	if(this->polar) gsl_matrix_complex_free(this->polar);
+	if(this->Disorder) gsl_matrix_complex_free(this->Disorder);
 }
